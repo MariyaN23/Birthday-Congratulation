@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Birthday congratulation</title>
+    <style>
+        .progress {
+            width: 100%;
+            background-color: #f1f1f1;
+        }
+
+        .bar {
+            width: 0;
+            height: 30px;
+            background-color: #4caf50;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+
+        .processed {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<input type="date" id="minBirthday">
+<input type="date" id="maxBirthday">
+<button onclick="startButton()">Start</button>
+<button onclick="cancelProcessing()">Cancel</button>
+<div class="progress">
+    <div class="bar" id="progressBar" style="display: none">0%</div>
+</div>
+<div id="errorDiv" class="error" style="display: none"></div>
+<div id="successDiv" class="success" style="display: none"></div>
+<div id="processedDiv" class="processed" style="display: none"></div>
+</body>
+
+<script>
+    //min date
+    const minDate = new Date().toISOString().split('T')[0]
+    const inputMinDate = document.getElementById('minBirthday')
+    inputMinDate.min = minDate
+
+    //max date
+    const maxDate = new Date().toISOString().split('T')[0]
+    const inputMaxDate = document.getElementById('maxBirthday')
+    inputMaxDate.min = maxDate
+
+    var Email = {
+        send: function (a) {
+            return new Promise(function (n, e) {
+                a.nocache = Math.floor(1e6 * Math.random() + 1), a.Action = "Send";
+                var t = JSON.stringify(a);
+                Email.ajaxPost("https://smtpjs.com/v3/smtpjs.aspx?", t, function (e) {
+                    n(e)
+                })
+            })
+        }, ajaxPost: function (e, n, t) {
+            var a = Email.createCORSRequest("POST", e);
+            a.setRequestHeader("Content-type", "application/x-www-form-urlencoded"), a.onload = function () {
+                var e = a.responseText;
+                null != t && t(e)
+            }, a.send(n)
+        }, ajax: function (e, n) {
+            var t = Email.createCORSRequest("GET", e);
+            t.onload = function () {
+                var e = t.responseText;
+                null != n && n(e)
+            }, t.send()
+        }, createCORSRequest: function (e, n) {
+            var t = new XMLHttpRequest;
+            return "withCredentials" in t ? t.open(e, n, !0) : "undefined" != typeof XDomainRequest ? (t = new XDomainRequest).open(e, n) : t = null, t
+        }
+    }
+
+    let stopProcessing = false
+
+    let processed = 0
+    let errorSendingEmail = 0
+    let all
+    let alreadySentEmail = 0
+    const startButton = () => {
+        stopProcessing = false
+        processed = 0
+        errorSendingEmail = 0
+        all = 0
+        alreadySentEmail = 0
+
+        const progressBar = document.getElementById("progressBar")
+        const processedDiv = document.getElementById("processedDiv")
+        progressBar.style.width = 0 + "%"
+        progressBar.innerHTML = 0 + "%"
+
+        const minInputValue = new Date(document.getElementById('minBirthday').value)
+        const maxInputValue = new Date(document.getElementById('maxBirthday').value)
+        const sevenDaysLater = new Date()
+        sevenDaysLater.setDate(sevenDaysLater.getDate() + 7)
+
+        const errorDiv = document.getElementById('errorDiv')
+        errorDiv.style.display = 'none'
+
+        const successDiv = document.getElementById('successDiv')
+        successDiv.style.display = 'none'
+
+        if (minInputValue > maxInputValue) {
+            errorDiv.innerText = 'Min value should not be more than max'
+            errorDiv.style.display = 'block'
+        } else if (maxInputValue > sevenDaysLater) {
+            errorDiv.innerText = 'Max value should not be more than 7 days'
+            errorDiv.style.display = 'block'
+        } else {
+            const startDateString = minInputValue.toISOString().slice(0, 10)
+            const endDateString = maxInputValue.toISOString().slice(0, 10)
+            const filter = `birthdate ge ${startDateString} and birthdate le ${endDateString}`
+            parent.Xrm.WebApi.retrieveMultipleRecords("contact", `?$select=fullname,emailaddress1,test_last_birthday_congrat,contactid,gendercode&$filter=${filter}`).then(
+                function success(result) {
+                    const total = result.entities.length
+
+                    progressBar.style.display = 'block'
+                    processedDiv.style.display = 'block'
+                    processedDiv.innerText = `Processed contacts ${processed} from ${total}`
+
+                    result.entities.forEach(function (contact) {
+                        if (stopProcessing) {
+                            return
+                        }
+
+                        const emailAddress = contact.emailaddress1
+                        const isEmailSentToUser = contact.test_last_birthday_congrat
+                        const genderCode = contact.gendercode
+                        const userName = contact.fullname
+                        let birthdayMessageBody
+
+                        if (genderCode === 1) {
+                            birthdayMessageBody = `Sehr geehrter Herr ${userName},
+                            Ich möchte Ihnen herzlich gratulieren zu Ihrem jüngsten Erfolg.
+                            Mögen weiterhin viele positive Momente und Errungenschaften Ihren Weg kreuzen.`
+                        } else if (genderCode === 2) {
+                            birthdayMessageBody = `Sehr geehrte Frau ${userName},
+                            Ich möchte Ihnen herzlich zu Ihren jüngsten Erfolgen gratulieren.
+                            Mögen weiterhin viele positive Momente und Errungenschaften Ihren Weg begleiten.`
+                        }
+
+                        if (!isEmailSentToUser) {
+                            Email.send({
+                                Host: "smtp.elasticemail.com",
+                                Username: "sellaite505@gmail.com",
+                                Password: "780A6E10DC3187E084E5BAFDCB85B66F2AAF",
+                                To: emailAddress,
+                                From: "sellaite505@gmail.com",
+                                Subject: "Happy Birthday!",
+                                Body: birthdayMessageBody
+                            }).then(
+                                message => {
+                                    if (message === 'OK') {
+                                        processed++
+                                        parent.Xrm.WebApi.updateRecord("contact", contact.contactid, { test_last_birthday_congrat: true }).then(
+                                            function success(result) {
+                                                console.log("Field updated successfully")
+                                            },
+                                            function(error) {
+                                                console.log(error.message)
+                                            }
+                                        )
+                                    } else {
+                                        errorSendingEmail++
+                                    }
+                                    all = processed + errorSendingEmail + alreadySentEmail
+                                    processedDiv.innerText = `Processed contacts ${processed} from ${total}, error ${errorSendingEmail}, already sent ${alreadySentEmail}`
+                                    const progress = Math.round((all / total) * 100)
+                                    progressBar.style.width = progress + "%"
+                                    progressBar.innerHTML = progress + "%"
+
+                                    if (all === total) {
+                                        processedDiv.innerText = `${total} contacts are processed, ${processed} congratulation
+                                    e-mails were successfully sent (sending of ${errorSendingEmail} e-mails failed, already sent emails ${alreadySentEmail}).`
+                                        successDiv.innerText = 'All emails sent!'
+                                        successDiv.style.display = 'block'
+                                    }
+                                }
+                            )
+                        } else {
+                            alreadySentEmail++
+                            all = processed + errorSendingEmail + alreadySentEmail
+                            processedDiv.innerText = `Processed contacts ${processed} from ${total}, error ${errorSendingEmail}, already sent ${alreadySentEmail}`
+                            const progress = Math.round((all / total) * 100)
+                            progressBar.style.width = progress + "%"
+                            progressBar.innerHTML = progress + "%"
+
+                            if (all === total) {
+                                processedDiv.innerText = `${total} contacts are processed, ${processed} congratulation
+                                    e-mails were successfully sent (sending of ${errorSendingEmail} e-mails failed, already sent emails ${alreadySentEmail}).`
+                                successDiv.innerText = 'All emails sent!'
+                                successDiv.style.display = 'block'
+                            }
+                        }
+                    })
+                },
+                function (error) {
+                    console.log(error.message)
+                }
+            );
+        }
+    }
+
+    const cancelProcessing = () => {
+        const progressBar = document.getElementById("progressBar")
+        progressBar.style.display = 'none'
+        if (confirm("Are you sure you want to cancel the processing?")) {
+            stopProcessing = true
+            const processedDiv = document.getElementById("processedDiv")
+            processedDiv.innerText = `Processing is cancelled successfully. ${processed} contacts are processed,
+        ${processed} congratulation e-mails were successfully sent (sending of ${errorSendingEmail} e-mails failed).`
+            const successDiv = document.getElementById("successDiv")
+            successDiv.innerText = 'Processing Cancelled'
+            successDiv.style.display = 'block'
+        }
+    }
+</script>
+</html>
