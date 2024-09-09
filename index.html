@@ -175,7 +175,20 @@
                                 message => {
                                     if (message === 'OK') {
                                         processed++
-                                        parent.Xrm.WebApi.updateRecord("contact", contact.contactid, { test_last_birthday_congrat: true }).then(
+                                        const contactId = contact.contactid
+                                        const updateData = {
+                                            test_last_birthday_congrat: true
+                                        }
+
+                                        //parent.Xrm.WebApi.updateRecord("contact", contact.contactid, { test_last_birthday_congrat: true })
+                                        fetch(`https://orgd9f95318.crm11.dynamics.com/api/data/v9.1/contacts(${contactId})`, {
+                                            method: 'PATCH',
+                                            headers: {
+                                                'Authorization': `Bearer ${accessToken}`,
+                                                'Content-Type': 'application/json'
+                                            },
+                                            body: JSON.stringify(updateData)
+                                        }).then(
                                             function success(result) {
                                                 console.log("Field updated successfully")
                                             },
@@ -221,12 +234,6 @@
                     console.log(error.message)
                 }
             )
-
-            if (typeof Xrm !== 'undefined' && typeof Xrm.WebApi !== 'undefined') {
-                console.log('Xrm.WebApi доступен');
-            } else {
-                console.error('Xrm.WebApi не доступен');
-            }
         }
     }
 
