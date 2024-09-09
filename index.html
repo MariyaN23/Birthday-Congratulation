@@ -32,6 +32,7 @@
             font-weight: bold;
         }
     </style>
+    <script src="https://org.crm.dynamics.com/api/data/v9.1/xrm.js"></script>
 </head>
 <body>
 <input type="date" id="minBirthday">
@@ -47,6 +48,13 @@
 </body>
 
 <script>
+    if (typeof Xrm !== 'undefined' && typeof Xrm.WebApi !== 'undefined') {
+        console.log('Xrm.WebApi доступен');
+    } else {
+        console.error('Xrm.WebApi не доступен');
+    }
+
+
     //min date
     const minDate = new Date().toISOString().split('T')[0]
     const inputMinDate = document.getElementById('minBirthday')
