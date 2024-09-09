@@ -133,8 +133,16 @@
                     "Authorization": `Bearer ${accessToken}`,
                     "Content-Type": "application/json"
                 }
-            }).then(
-                function success(result) {
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            }).then(data => {
+                        if (!data.value || !Array.isArray(data.value)) {
+                            throw new Error('Invalid response format');
+                        }
+
                     const total = result.entities.length
 
                     progressBar.style.display = 'block'
