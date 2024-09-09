@@ -126,7 +126,14 @@
             const filter = `birthdate ge ${startDateString} and birthdate le ${endDateString}`
 
             //parent. ...
-            Xrm.WebApi.retrieveMultipleRecords("contact", `?$select=fullname,emailaddress1,test_last_birthday_congrat,contactid,gendercode&$filter=${filter}`).then(
+            //Xrm.WebApi.retrieveMultipleRecords("contact", `?$select=fullname,emailaddress1,test_last_birthday_congrat,contactid,gendercode&$filter=${filter}`)
+            const accessToken = localStorage.getItem('access_token')
+            fetch("https://orgd9f95318.crm11.dynamics.com/api/data/v9.1/contacts?$select=fullname,emailaddress1,test_last_birthday_congrat,contactid,gendercode&$filter=birthdate ge " + startDateString + " and birthdate le " + endDateString, {
+                headers: {
+                    "Authorization": `Bearer ${accessToken}`,
+                    "Content-Type": "application/json"
+                }
+            }).then(
                 function success(result) {
                     const total = result.entities.length
 
