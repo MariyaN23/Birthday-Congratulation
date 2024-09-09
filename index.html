@@ -48,13 +48,6 @@
 </body>
 
 <script>
-    if (typeof Xrm !== 'undefined' && typeof Xrm.WebApi !== 'undefined') {
-        console.log('Xrm.WebApi доступен');
-    } else {
-        console.error('Xrm.WebApi не доступен');
-    }
-
-
     //min date
     const minDate = new Date().toISOString().split('T')[0]
     const inputMinDate = document.getElementById('minBirthday')
@@ -131,7 +124,9 @@
             const startDateString = minInputValue.toISOString().slice(0, 10)
             const endDateString = maxInputValue.toISOString().slice(0, 10)
             const filter = `birthdate ge ${startDateString} and birthdate le ${endDateString}`
-            parent.Xrm.WebApi.retrieveMultipleRecords("contact", `?$select=fullname,emailaddress1,test_last_birthday_congrat,contactid,gendercode&$filter=${filter}`).then(
+
+            //parent. ...
+            Xrm.WebApi.retrieveMultipleRecords("contact", `?$select=fullname,emailaddress1,test_last_birthday_congrat,contactid,gendercode&$filter=${filter}`).then(
                 function success(result) {
                     const total = result.entities.length
 
@@ -218,7 +213,13 @@
                 function (error) {
                     console.log(error.message)
                 }
-            );
+            )
+
+            if (typeof Xrm !== 'undefined' && typeof Xrm.WebApi !== 'undefined') {
+                console.log('Xrm.WebApi доступен');
+            } else {
+                console.error('Xrm.WebApi не доступен');
+            }
         }
     }
 
