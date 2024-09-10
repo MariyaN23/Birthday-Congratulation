@@ -218,19 +218,17 @@
                     errorMessage.textContent = 'ADAL error occurred: ' + error;
                     return;
                 }
-            const startDateString = minInputValue.toISOString().slice(0, 10)
-            const endDateString = maxInputValue.toISOString().slice(0, 10)
-            //parent.Xrm.WebApi.retrieveMultipleRecords("contact", `?$select=fullname,emailaddress1,test_last_birthday_congrat,contactid,gendercode&$filter=${filter}`)
-            const filter = `birthdate ge ${startDateString} and birthdate le ${endDateString}`
-            const params = `?$select=fullname,emailaddress1,test_last_birthday_congrat,contactid,gendercode&$filter=${filter}`
-            const contactsQuery = `/api/data/v8.0/${params}`
+                retrieveContacts(token);
+            })
 
-            function retrieveContacts(error, token) {
-                // Handle ADAL Errors.
-                if (error || !token) {
-                    errorMessage.textContent = 'ADAL error occurred: ' + error;
-                    return;
-                }
+            function retrieveContacts(token) {
+                const startDateString = minInputValue.toISOString().slice(0, 10)
+                const endDateString = maxInputValue.toISOString().slice(0, 10)
+                //parent.Xrm.WebApi.retrieveMultipleRecords("contact", `?$select=fullname,emailaddress1,test_last_birthday_congrat,contactid,gendercode&$filter=${filter}`)
+                const filter = `birthdate ge ${startDateString} and birthdate le ${endDateString}`
+                const params = `?$select=fullname,emailaddress1,test_last_birthday_congrat,contactid,gendercode&$filter=${filter}`
+                const contactsQuery = `/api/data/v8.0/${params}`
+
                 var req = new XMLHttpRequest()
                 req.open("GET", encodeURI(organizationURI + contactsQuery), true);
                 //Set Bearer token
@@ -245,8 +243,7 @@
                         if (this.status == 200) {
                             var accounts = JSON.parse(this.response).value;
                             success(accounts)
-                        }
-                        else {
+                        } else {
                             var error = JSON.parse(this.response).error;
                             console.log(error.message);
                             errorMessage.textContent = error.message;
@@ -255,6 +252,7 @@
                 };
                 req.send();
             }
+
             function success(result) {
                 const total = result.entities.length
 
@@ -338,7 +336,7 @@
                     }
                 })
             }
-        })}
+        }
     }
 
     const cancelProcessing = () => {
