@@ -128,22 +128,7 @@
     }
     //function that logs in the user
     function login() {
-        return new Promise(function(resolve, reject) {
-            authContext.handleWindowCallback()
-            authContext.login(function(error) {
-                if (error) {
-                    reject(error)
-                } else {
-                    authContext.acquireToken(organizationURI, function(acquireError, token) {
-                        if (acquireError) {
-                            reject(acquireError)
-                        } else {
-                            resolve(token)
-                        }
-                    })
-                }
-            })
-        })
+        authContext.login()
     }
     //function that logs out the user
     function logout() {
@@ -151,34 +136,47 @@
         accountsTable.style.display = "none";
         accountsTableBody.innerHTML = "";
     }
-    function retrieveContacts(token) {
-        return new Promise(function(resolve, reject) {
-            const minInputValue = new Date(document.getElementById('minBirthday').value)
-            const maxInputValue = new Date(document.getElementById('maxBirthday').value)
-            const startDateString = minInputValue.toISOString().slice(0, 10)
-            const endDateString = maxInputValue.toISOString().slice(0, 10)
-            const filter = `birthdate ge ${startDateString} and birthdate le ${endDateString}`
-
-            var req = new XMLHttpRequest();
-            req.open("GET", encodeURI(organizationURI + "/api/data/v8.0/contacts?$select=fullname,emailaddress1,test_last_birthday_congrat,contactid,gendercode&$filter=" + filter), true);
-            // Set Bearer token
-            req.setRequestHeader("Authorization", "Bearer " + token);
-            req.setRequestHeader("Accept", "application/json");
-            req.setRequestHeader("Content-Type", "application/json; charset=utf-8");
-            req.setRequestHeader("OData-MaxVersion", "4.0");
-            req.setRequestHeader("OData-Version", "4.0");
-            req.onreadystatechange = function() {
-                if (this.readyState === 4) {
-                    if (this.status === 200) {
-                        resolve(JSON.parse(this.response).value)
-                    } else {
-                        var error = JSON.parse(this.response).error
-                        reject(error.message)
-                    }
+    //function that initiates retrieval of accounts
+    function getAccounts() {
+        var retrievingAccountsMessage = document.createElement("p");
+        retrievingAccountsMessage.textContent = "Retrieving 10 accounts from " + organizationURI + "/api/data/v8.0/accounts";
+        message.appendChild(retrievingAccountsMessage)
+        // Function to perform operation is passed as a parameter to the aquireToken method
+        authContext.acquireToken(organizationURI, retrieveAccounts)
+    }
+    function retrieveAccounts(error, token) {
+        // Handle ADAL Errors.
+        if (error || !token) {
+            errorMessage.textContent = 'ADAL error occurred: ' + error;
+            return;
+        }
+        var req = new XMLHttpRequest()
+        req.open("GET", encodeURI(organizationURI + accountsQuery), true);
+        //Set Bearer token
+        req.setRequestHeader("Authorization", "Bearer " + token);
+        req.setRequestHeader("Accept", "application/json");
+        req.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        req.setRequestHeader("OData-MaxVersion", "4.0");
+        req.setRequestHeader("OData-Version", "4.0");
+        req.onreadystatechange = function () {
+            if (this.readyState == 4 /* complete */) {
+                req.onreadystatechange = null;
+                if (this.status == 200) {
+                    var accounts = JSON.parse(this.response).value;
+                    renderAccounts(accounts);
+                }
+                else {
+                    var error = JSON.parse(this.response).error;
+                    console.log(error.message);
+                    errorMessage.textContent = error.message;
                 }
             }
-            req.send()
-        })
+        };
+        req.send();
+    }
+    function renderAccounts(accounts) {
+        console.log(`${accounts.length} found`)
+        return accounts
     }
 </script>
 
@@ -256,7 +254,7 @@
             errorDiv.innerText = 'Max value should not be more than 7 days'
             errorDiv.style.display = 'block'
         } else {
-            retrieveContacts().then(function(result) {
+            renderAccounts().then(function(result) {
                     const total = result.length
 
                     progressBar.style.display = 'block'
