@@ -228,6 +228,11 @@
                     'Accept': 'application/json',
                     'Content-Type': 'application/json; charset=utf-8'
                 }
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response is not ok')
+                }
+                return response.json()
             }).then(
                 function success(result) {
                     const total = result.entities.length
