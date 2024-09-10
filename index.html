@@ -128,7 +128,22 @@
     }
     //function that logs in the user
     function login() {
-        authContext.login();
+        return new Promise(function(resolve, reject) {
+            authContext.handleWindowCallback()
+            authContext.login(function(error) {
+                if (error) {
+                    reject(error)
+                } else {
+                    authContext.acquireToken(organizationURI, function(acquireError, token) {
+                        if (acquireError) {
+                            reject(acquireError)
+                        } else {
+                            resolve(token)
+                        }
+                    })
+                }
+            })
+        })
     }
     //function that logs out the user
     function logout() {
@@ -136,7 +151,7 @@
         accountsTable.style.display = "none";
         accountsTableBody.innerHTML = "";
     }
-    function retrieveContacts() {
+    function retrieveContacts(token) {
         return new Promise(function(resolve, reject) {
             const minInputValue = new Date(document.getElementById('minBirthday').value)
             const maxInputValue = new Date(document.getElementById('maxBirthday').value)
