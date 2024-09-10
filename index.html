@@ -226,8 +226,7 @@
                 const endDateString = maxInputValue.toISOString().slice(0, 10)
                 //parent.Xrm.WebApi.retrieveMultipleRecords("contact", `?$select=fullname,emailaddress1,test_last_birthday_congrat,contactid,gendercode&$filter=${filter}`)
                 const filter = `birthdate ge ${startDateString} and birthdate le ${endDateString}`
-                const params = `?$select=fullname,emailaddress1,test_last_birthday_congrat,contactid,gendercode&$filter=${filter}`
-                const contactsQuery = `/api/data/v8.0/${params}`
+                const contactsQuery = `/api/data/v8.0/contacts?$select=fullname,emailaddress1,test_last_birthday_congrat,contactid,gendercode&$filter=${filter}`
 
                 var req = new XMLHttpRequest()
                 req.open("GET", encodeURI(organizationURI + contactsQuery), true);
@@ -238,9 +237,9 @@
                 req.setRequestHeader("OData-MaxVersion", "4.0");
                 req.setRequestHeader("OData-Version", "4.0");
                 req.onreadystatechange = function () {
-                    if (this.readyState == 4) {
+                    if (this.readyState === 4) {
                         req.onreadystatechange = null;
-                        if (this.status == 200) {
+                        if (this.status === 200) {
                             var accounts = JSON.parse(this.response).value;
                             success(accounts)
                         } else {
