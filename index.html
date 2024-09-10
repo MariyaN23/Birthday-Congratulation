@@ -61,7 +61,8 @@
     var tenant = "qsolutions349.onmicrosoft.com"; //The name of the Azure AD organization you use
     var clientId = "d5cd66c0-93d6-4051-acc8-6b0f95bbb09f"; //The ClientId you got when you registered the application
     var pageUrl = "https://orgd9f95318.crm11.dynamics.com"; //The URL of this page in your development environment when debugging.
-    var user, authContext, message, errorMessage, loginButton, logoutButton, getAccountsButton, accountsTable, accountsTableBody;
+    var user, authContext, message, errorMessage, loginButton, logoutButton, getAccountsButton, accountsTable,
+        accountsTableBody;
     var accountsQuery = "/api/data/v8.0/accounts?$select=name,address1_city&$top=10";
     var apiVersion = "/api/data/v8.0/";
     //Configuration data for AuthenticationContext
@@ -101,13 +102,13 @@
 
                 const div = document.getElementById('openBirthdayCongratulation')
                 div.style.display = 'block'
-            }
-            else {
+            } else {
                 loginButton.style.display = "block";
                 logoutButton.style.display = "none";
             }
         }
     }
+
     // Function that manages authentication
     function authenticate() {
         //OAuth context
@@ -120,22 +121,24 @@
         var loginError = authContext.getLoginError();
         if (isCallback && !loginError) {
             window.location = authContext._getItem(authContext.CONSTANTS.STORAGE.LOGIN_REQUEST);
-        }
-        else {
+        } else {
             errorMessage.textContent = loginError;
         }
         user = authContext.getCachedUser();
     }
+
     //function that logs in the user
     function login() {
         authContext.login()
     }
+
     //function that logs out the user
     function logout() {
         authContext.logOut();
         accountsTable.style.display = "none";
         accountsTableBody.innerHTML = "";
     }
+
     //function that initiates retrieval of accounts
     function getAccounts() {
         var retrievingAccountsMessage = document.createElement("p");
@@ -144,7 +147,8 @@
         // Function to perform operation is passed as a parameter to the aquireToken method
         authContext.acquireToken(organizationURI, retrieveAccounts)
     }
-    function retrieveAccounts(error, token) {
+
+    /*function retrieveAccounts(error, token) {
         // Handle ADAL Errors.
         if (error || !token) {
             errorMessage.textContent = 'ADAL error occurred: ' + error;
@@ -159,13 +163,12 @@
         req.setRequestHeader("OData-MaxVersion", "4.0");
         req.setRequestHeader("OData-Version", "4.0");
         req.onreadystatechange = function () {
-            if (this.readyState == 4 /* complete */) {
+            if (this.readyState == 4 /!* complete *!/) {
                 req.onreadystatechange = null;
                 if (this.status == 200) {
                     var accounts = JSON.parse(this.response).value;
                     renderAccounts(accounts);
-                }
-                else {
+                } else {
                     var error = JSON.parse(this.response).error;
                     console.log(error.message);
                     errorMessage.textContent = error.message;
@@ -173,11 +176,11 @@
             }
         };
         req.send();
-    }
-    function renderAccounts(accounts) {
-        console.log(`${accounts.length} found`)
-        return accounts
-    }
+        function renderAccounts(accounts) {
+            console.log(`${accounts.length} found`)
+            return accounts
+        }
+    }*/
 </script>
 
 <script>
@@ -254,57 +257,91 @@
             errorDiv.innerText = 'Max value should not be more than 7 days'
             errorDiv.style.display = 'block'
         } else {
-            renderAccounts().then(function(result) {
-                    const total = result.length
+            function retrieveAccounts(error, token) {
+                if (error || !token) {
+                    errorMessage.textContent = 'ADAL error occurred: ' + error;
+                    return;
+                }
+                var req = new XMLHttpRequest();
+                req.open("GET", encodeURI(organizationURI + accountsQuery), true);
+                // Set Bearer token
+                req.setRequestHeader("Authorization", "Bearer " + token);
+                req.setRequestHeader("Accept", "application/json");
+                req.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+                req.setRequestHeader("OData-MaxVersion", "4.0");
+                req.setRequestHeader("OData-Version", "4.0");
+                req.onreadystatechange = function () {
+                    if (this.readyState == 4) {
+                        req.onreadystatechange = null;
+                        if (this.status == 200) {
+                            var accounts = JSON.parse(this.response).value
+                            const result = renderAccounts(accounts)
+                            const total = result.length
 
-                    progressBar.style.display = 'block'
-                    processedDiv.style.display = 'block'
-                    processedDiv.innerText = `Processed contacts ${processed} from ${total}`
+                            progressBar.style.display = 'block'
+                            processedDiv.style.display = 'block'
+                            processedDiv.innerText = `Processed contacts ${processed} from ${total}`
 
-                    result.forEach(function (contact) {
-                        if (stopProcessing) {
-                            return
-                        }
-                        const emailAddress = contact.emailaddress1
-                        const isEmailSentToUser = contact.test_last_birthday_congrat
-                        const genderCode = contact.gendercode
-                        const userName = contact.fullname
-                        let birthdayMessageBody
+                            result.forEach(function (contact) {
+                                if (stopProcessing) {
+                                    return
+                                }
+                                const emailAddress = contact.emailaddress1
+                                const isEmailSentToUser = contact.test_last_birthday_congrat
+                                const genderCode = contact.gendercode
+                                const userName = contact.fullname
+                                let birthdayMessageBody
 
-                        if (genderCode === 1) {
-                            birthdayMessageBody = `Sehr geehrter Herr ${userName},
+                                if (genderCode === 1) {
+                                    birthdayMessageBody = `Sehr geehrter Herr ${userName},
                             Ich möchte Ihnen herzlich gratulieren zu Ihrem jüngsten Erfolg.
                             Mögen weiterhin viele positive Momente und Errungenschaften Ihren Weg kreuzen.`
-                        } else if (genderCode === 2) {
-                            birthdayMessageBody = `Sehr geehrte Frau ${userName},
+                                } else if (genderCode === 2) {
+                                    birthdayMessageBody = `Sehr geehrte Frau ${userName},
                             Ich möchte Ihnen herzlich zu Ihren jüngsten Erfolgen gratulieren.
                             Mögen weiterhin viele positive Momente und Errungenschaften Ihren Weg begleiten.`
-                        }
+                                }
 
-                        if (!isEmailSentToUser) {
-                            Email.send({
-                                Host: "smtp.elasticemail.com",
-                                Username: "sellaite505@gmail.com",
-                                Password: "780A6E10DC3187E084E5BAFDCB85B66F2AAF",
-                                To: emailAddress,
-                                From: "sellaite505@gmail.com",
-                                Subject: "Happy Birthday!",
-                                Body: birthdayMessageBody
-                            }).then(
-                                message => {
-                                    if (message === 'OK') {
-                                        processed++
-                                        parent.Xrm.WebApi.updateRecord("contact", contact.contactid, { test_last_birthday_congrat: true }).then(
-                                            function success(result) {
-                                                console.log("Field updated successfully")
-                                            },
-                                            function(error) {
-                                                console.log(error.message)
+                                if (!isEmailSentToUser) {
+                                    Email.send({
+                                        Host: "smtp.elasticemail.com",
+                                        Username: "sellaite505@gmail.com",
+                                        Password: "780A6E10DC3187E084E5BAFDCB85B66F2AAF",
+                                        To: emailAddress,
+                                        From: "sellaite505@gmail.com",
+                                        Subject: "Happy Birthday!",
+                                        Body: birthdayMessageBody
+                                    }).then(
+                                        message => {
+                                            if (message === 'OK') {
+                                                processed++
+                                                parent.Xrm.WebApi.updateRecord("contact", contact.contactid, {test_last_birthday_congrat: true}).then(
+                                                    function success(result) {
+                                                        console.log("Field updated successfully")
+                                                    },
+                                                    function (error) {
+                                                        console.log(error.message)
+                                                    }
+                                                )
+                                            } else {
+                                                errorSendingEmail++
                                             }
-                                        )
-                                    } else {
-                                        errorSendingEmail++
-                                    }
+                                            all = processed + errorSendingEmail + alreadySentEmail
+                                            processedDiv.innerText = `Processed contacts ${processed} from ${total}, error ${errorSendingEmail}, already sent ${alreadySentEmail}`
+                                            const progress = Math.round((all / total) * 100)
+                                            progressBar.style.width = progress + "%"
+                                            progressBar.innerHTML = progress + "%"
+
+                                            if (all === total) {
+                                                processedDiv.innerText = `${total} contacts are processed, ${processed} congratulation
+                                    e-mails were successfully sent (sending of ${errorSendingEmail} e-mails failed, already sent emails ${alreadySentEmail}).`
+                                                successDiv.innerText = 'All emails sent!'
+                                                successDiv.style.display = 'block'
+                                            }
+                                        }
+                                    )
+                                } else {
+                                    alreadySentEmail++
                                     all = processed + errorSendingEmail + alreadySentEmail
                                     processedDiv.innerText = `Processed contacts ${processed} from ${total}, error ${errorSendingEmail}, already sent ${alreadySentEmail}`
                                     const progress = Math.round((all / total) * 100)
@@ -318,39 +355,24 @@
                                         successDiv.style.display = 'block'
                                     }
                                 }
-                            )
-                        } else {
-                            alreadySentEmail++
-                            all = processed + errorSendingEmail + alreadySentEmail
-                            processedDiv.innerText = `Processed contacts ${processed} from ${total}, error ${errorSendingEmail}, already sent ${alreadySentEmail}`
-                            const progress = Math.round((all / total) * 100)
-                            progressBar.style.width = progress + "%"
-                            progressBar.innerHTML = progress + "%"
-
-                            if (all === total) {
-                                processedDiv.innerText = `${total} contacts are processed, ${processed} congratulation
-                                    e-mails were successfully sent (sending of ${errorSendingEmail} e-mails failed, already sent emails ${alreadySentEmail}).`
-                                successDiv.innerText = 'All emails sent!'
-                                successDiv.style.display = 'block'
-                            }
+                            })
                         }
-                    })
-            })
-        }
-    }
+                    )
+                    }
+                }
 
-    const cancelProcessing = () => {
-        const progressBar = document.getElementById("progressBar")
-        progressBar.style.display = 'none'
-        if (confirm("Are you sure you want to cancel the processing?")) {
-            stopProcessing = true
-            const processedDiv = document.getElementById("processedDiv")
-            processedDiv.innerText = `Processing is cancelled successfully. ${processed} contacts are processed,
+                const cancelProcessing = () => {
+                    const progressBar = document.getElementById("progressBar")
+                    progressBar.style.display = 'none'
+                    if (confirm("Are you sure you want to cancel the processing?")) {
+                        stopProcessing = true
+                        const processedDiv = document.getElementById("processedDiv")
+                        processedDiv.innerText = `Processing is cancelled successfully. ${processed} contacts are processed,
         ${processed} congratulation e-mails were successfully sent (sending of ${errorSendingEmail} e-mails failed).`
-            const successDiv = document.getElementById("successDiv")
-            successDiv.innerText = 'Processing Cancelled'
-            successDiv.style.display = 'block'
-        }
-    }
+                        const successDiv = document.getElementById("successDiv")
+                        successDiv.innerText = 'Processing Cancelled'
+                        successDiv.style.display = 'block'
+                    }
+                }
 </script>
 </html>
