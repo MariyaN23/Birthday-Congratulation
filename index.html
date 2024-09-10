@@ -205,11 +205,23 @@
         const successDiv = document.getElementById('successDiv')
         successDiv.style.display = 'none'
 
+        const isMinInputEmpty = isNaN(minInputValue.getTime())
+        const isMaxInputEmpty = isNaN(maxInputValue.getTime())
+
         if (minInputValue > maxInputValue) {
             errorDiv.innerText = 'Min value should not be more than max'
             errorDiv.style.display = 'block'
         } else if (maxInputValue > sevenDaysLater) {
             errorDiv.innerText = 'Max value should not be more than 7 days'
+            errorDiv.style.display = 'block'
+        } else if (isMinInputEmpty && isMaxInputEmpty) {
+            errorDiv.innerText = 'Select min and max dates'
+            errorDiv.style.display = 'block'
+        } else if (isMinInputEmpty) {
+            errorDiv.innerText = `Min date shouldn't be empty`
+            errorDiv.style.display = 'block'
+        } else if (isMaxInputEmpty) {
+            errorDiv.innerText = `Max date shouldn't be empty`
             errorDiv.style.display = 'block'
         } else {
             authContext.acquireToken('https://graph.microsoft.com', function (error, token) {
@@ -240,15 +252,16 @@
                     if (this.readyState === 4) {
                         req.onreadystatechange = null;
                         if (this.status === 200) {
-                            var accounts = JSON.parse(this.response).value;
+                            const accounts = JSON.parse(this.response).value;
                             success(accounts)
+                            console.log(accounts)
                         } else {
                             var error = JSON.parse(this.response).error;
                             console.log(error.message);
                             errorMessage.textContent = error.message;
                         }
                     }
-                };
+                }
                 req.send();
             }
 
