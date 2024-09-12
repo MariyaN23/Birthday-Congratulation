@@ -3,7 +3,7 @@ var organizationURI = "https://orgd9f95318.crm11.dynamics.com"; //The URL to con
 var tenant = "qsolutions349.onmicrosoft.com"; //The name of the Azure AD organization you use
 var clientId = "d5cd66c0-93d6-4051-acc8-6b0f95bbb09f"; //The ClientId you got when you registered the application
 var pageUrl = "https://orgd9f95318.crm11.dynamics.com"; //The URL of this page in your development environment when debugging.
-var user, authContext, message, errorMessage, loginButton, logoutButton, getAccountsButton, accountsTable,
+var user, authContext, message, errorMessage, loginButton, logoutButton, accountsTable,
     accountsTableBody;
 var userId
 var languageId
@@ -110,6 +110,7 @@ function getUsersId(error, token) {
     }
     req.send()
 }
+
 function getUsersLanguageSettings(error, token) {
     if (error || !token) {
         console.log('ADAL error occurred: ' + error);
@@ -130,7 +131,6 @@ function getUsersLanguageSettings(error, token) {
             req.onreadystatechange = null;
             if (this.status === 200) {
                 languageId = JSON.parse(this.response).uilanguageid;
-                console.log(languageId)
                 changeLanguage(languageId)
             } else {
                 var error = JSON.parse(this.response).error;
@@ -188,7 +188,7 @@ const languages = {
     },
     "selectMinMaxDates-error": {
         "en": "Select min and max dates",
-        "ru": "Выберите минимальные и максимальные даты"
+        "ru": "Выберите минимальную и максимальную даты"
     },
     "minDateEmpty-error": {
         "en": "Min date shouldn't be empty",
@@ -198,7 +198,36 @@ const languages = {
         "en": "Max date shouldn't be empty",
         "ru": "Максимальная дата не должна быть пустой"
     },
+    //processed
+    "processed-contacts": {
+        "en": (processed, total, errorSendingEmail, alreadySentEmail) => `Processed contacts ${processed} from ${total}, error ${errorSendingEmail}, already sent ${alreadySentEmail} emails`,
+        "ru": (processed, total, errorSendingEmail, alreadySentEmail) => `Обработано контактов ${processed} из ${total}, ${errorSendingEmail} ошибок, ранее отправленных сообщений: ${alreadySentEmail}`
+    },
+    "all-contacts-processed": {
+        "en": "All contacts processed!",
+        "ru": "Все контакты обработаны!"
+    },
+    "progress": {
+        "en": (processed, total) => `Processed ${processed} contacts from ${total}`,
+        "ru": (processed, total) => `Обработано ${processed} контактов из ${total}`
+    },
+    "0-contacts": {
+        "en": "0 contacts found with this dates!",
+        "ru": "Найдено 0 контактов с этими датами!"
+    },
+    //cancel
+    "cancel-processing": {
+        "en": (processed, errorSendingEmail) => `Processing is cancelled successfully. ${processed} contacts are processed,
+        ${processed} congratulation e-mails were successfully sent (sending of ${errorSendingEmail} e-mails failed).`,
+        "ru": (processed, errorSendingEmail) => `Обработка успешно отменена. ${processed} контактов обработано, 
+        ${processed} писем успешно отправлено (отправка ${errorSendingEmail} писем не удалась).`
+    },
+    "all-cancelled": {
+        "en": "Processing cancelled!",
+        "ru": "Обработка отменена!"
+    },
 }
+
 function changeLanguage(languageCode) {
     let code
     if (languageCode === 1033) {
@@ -211,9 +240,22 @@ function changeLanguage(languageCode) {
     for (let key in languages) {
         let element = document.querySelector(`.lng-${key}`)
         if (element) {
-            key === "greetingUser"
-                ? element.innerHTML = `${languages[key][code]}${user.profile.name}`
-                : element.innerHTML = languages[key][code]
+            switch (key) {
+                case "greetingUser":
+                    element.innerHTML = `${languages[key][code]}${user.profile.name}`
+                    break;
+                case "processed-contacts":
+                    element.innerHTML = languages[key][code](processed, total, errorSendingEmail, alreadySentEmail)
+                    break;
+                case "progress":
+                    element.innerHTML = languages[key][code](processed, total)
+                    break;
+                case "cancel-processing":
+                    element.innerHTML = languages[key][code](processed, errorSendingEmail)
+                    break;
+                default:
+                    element.innerHTML = languages[key][code]
+            }
         }
     }
 }

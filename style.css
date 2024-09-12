@@ -1,9 +1,16 @@
+.container {
+    max-width: 900px;
+    font-size: 26px;
+    margin: 0 auto;
+}
+
 .progress {
     width: 100%;
     background-color: #f1f1f1;
 }
 
 .bar {
+    margin-top: 5px;
     width: 0;
     height: 30px;
     background-color: #4caf50;
@@ -29,4 +36,31 @@
 .buttons-container {
     display: flex;
     gap: 10px;
+}
+
+button {
+    width: 120px;
+    height: 100%;
+    cursor: pointer;
+    border: 1px solid black;
+    border-radius: 5px;
+    font-size: 26px;
+    font-weight: bold;
+}
+
+.lng-login-btn, .lng-logout-btn {
+    background-color: rgb(221, 215, 243);
+}
+
+.lng-start-btn {
+    background-color: rgba(105, 255, 128, 0.42);
+}
+
+.lng-cancel-btn {
+    background-color: rgba(255, 136, 163, 0.42);
+}
+
+.lng-0-contacts, .lng-cancel-processing, .lng-all-cancelled {
+    color: #fd6e0c;
+    font-weight: bold;
 }

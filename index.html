@@ -6,29 +6,32 @@
     <link href="style.css" rel="stylesheet">
 </head>
 <body>
-<div>
-    <button id="login" class="lng-login-btn">Login</button>
-    <button id="logout" class="lng-logout-btn" style="display:none">Logout</button>
-    <div id="errorMessage"></div>
-    <div id="message"></div>
-</div>
+<div class="container">
+    <div>
+        <button id="login" class="lng-login-btn">Login</button>
+        <button id="logout" class="lng-logout-btn" style="display:none">Logout</button>
+        <div id="errorMessage"></div>
+        <div id="message"></div>
+    </div>
 
-<div id="openBirthdayCongratulation" style="display:none">
-    <div class="buttons-container">
-        <label for="minBirthday" class="lng-min-date">Min date:</label><input type="date" id="minBirthday">
-        <label for="maxBirthday" class="lng-max-date">Max date:</label><input type="date" id="maxBirthday">
-        <button onclick="startButton()" class="lng-start-btn">Start</button>
-        <button onclick="cancelProcessing()" class="lng-cancel-btn" style="display: none">Cancel</button>
+    <div id="openBirthdayCongratulation" style="display:none">
+        <div class="buttons-container">
+            <label for="minBirthday" class="lng-min-date">Start date:</label><input type="date" id="minBirthday">
+            <label for="maxBirthday" class="lng-max-date">End date:</label><input type="date" id="maxBirthday">
+            <button onclick="startButton()" class="lng-start-btn">Start</button>
+            <button onclick="cancelProcessing()" class="lng-cancel-btn" style="display: none">Cancel</button>
+        </div>
+        <div class="progress">
+            <div class="bar" id="progressBar" style="display: none">0%</div>
+        </div>
+        <div id="errorDiv" class="error" style="display: none"></div>
+        <div id="successDiv" class="success" style="display: none"></div>
+        <div id="processedDiv" class="processed" style="display: none"></div>
     </div>
-    <div class="progress">
-        <div class="bar" id="progressBar" style="display: none">0%</div>
-    </div>
-    <div id="errorDiv" class="error" style="display: none"></div>
-    <div id="successDiv" class="success" style="display: none"></div>
-    <div id="processedDiv" class="processed" style="display: none"></div>
 </div>
 </body>
-  <script src="https://secure.aadcdn.microsoftonline-p.com/lib/1.0.0/js/adal.min.js"></script>
-  <script src="index.js"></script>
-  <script src="birthday.js"></script>
+<script src="https://secure.aadcdn.microsoftonline-p.com/lib/1.0.0/js/adal.min.js"></script>
+<script src="https://smtpjs.com/v3/smtp.js"></script>
+<script src="index.js"></script>
+<script src="birthday.js"></script>
 </html>

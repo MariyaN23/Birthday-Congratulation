@@ -8,38 +8,12 @@ const maxDate = new Date().toISOString().split('T')[0]
 const inputMaxDate = document.getElementById('maxBirthday')
 inputMaxDate.min = maxDate
 
-var Email = {
-    send: function (a) {
-        return new Promise(function (n, e) {
-            a.nocache = Math.floor(1e6 * Math.random() + 1), a.Action = "Send";
-            var t = JSON.stringify(a);
-            Email.ajaxPost("https://smtpjs.com/v3/smtpjs.aspx?", t, function (e) {
-                n(e)
-            })
-        })
-    }, ajaxPost: function (e, n, t) {
-        var a = Email.createCORSRequest("POST", e);
-        a.setRequestHeader("Content-type", "application/x-www-form-urlencoded"), a.onload = function () {
-            var e = a.responseText;
-            null != t && t(e)
-        }, a.send(n)
-    }, ajax: function (e, n) {
-        var t = Email.createCORSRequest("GET", e);
-        t.onload = function () {
-            var e = t.responseText;
-            null != n && n(e)
-        }, t.send()
-    }, createCORSRequest: function (e, n) {
-        var t = new XMLHttpRequest;
-        return "withCredentials" in t ? t.open(e, n, !0) : "undefined" != typeof XDomainRequest ? (t = new XDomainRequest).open(e, n) : t = null, t
-    }
-}
-
 let stopProcessing = false
 let processed = 0
 let errorSendingEmail = 0
 let all
 let alreadySentEmail = 0
+let total
 
 const startButton = () => {
     const cancelButton = document.querySelector('.lng-cancel-btn')
@@ -49,54 +23,66 @@ const startButton = () => {
     errorSendingEmail = 0
     all = 0
     alreadySentEmail = 0
+    total = 0
 
     const progressBar = document.getElementById("progressBar")
     const processedDiv = document.getElementById("processedDiv")
+    clearAllClasses(processedDiv)
     progressBar.style.width = 0 + "%"
     progressBar.innerHTML = 0 + "%"
 
     const minInputValue = new Date(document.getElementById('minBirthday').value)
     const maxInputValue = new Date(document.getElementById('maxBirthday').value)
     const sevenDaysLater = new Date()
-    sevenDaysLater.setDate(sevenDaysLater.getDate() + 7)
+    //sevenDaysLater.setDate(sevenDaysLater.getDate() + 7)
+    sevenDaysLater.setDate(minInputValue.getDate() + 7)
 
     const errorDiv = document.getElementById('errorDiv')
     errorDiv.style.display = 'none'
+    clearAllClasses(errorDiv)
 
     const successDiv = document.getElementById('successDiv')
     successDiv.style.display = 'none'
+    clearAllClasses(successDiv)
+
 
     const isMinInputEmpty = isNaN(minInputValue.getTime())
     const isMaxInputEmpty = isNaN(maxInputValue.getTime())
 
-    while (errorDiv.classList.length > 0) {
+    /*while (errorDiv.classList.length > 0) {
         errorDiv.classList.remove(errorDiv.classList.item(0));
-    }
+    }*/
     errorDiv.classList.add("error")
 
-    if (minInputValue > maxInputValue) {
-        errorDiv.innerText = 'Min value should not be more than max'
-        errorDiv.style.display = 'block'
-        errorDiv.classList.add("lng-minMoreThanMax-error")
-    } else if (maxInputValue > sevenDaysLater) {
-        errorDiv.innerText = 'Max value should not be more than 7 days'
-        errorDiv.style.display = 'block'
-        errorDiv.classList.add("lng-maxMoreThanSevenDays-error")
-    } else if (isMinInputEmpty && isMaxInputEmpty) {
-        errorDiv.innerText = 'Select min and max dates'
-        errorDiv.style.display = 'block'
-        errorDiv.classList.add("lng-selectMinMaxDates-error")
-    } else if (isMinInputEmpty) {
-        errorDiv.innerText = `Min date shouldn't be empty`
-        errorDiv.style.display = 'block'
-        errorDiv.classList.add("lng-minDateEmpty-error")
-    } else if (isMaxInputEmpty) {
-        errorDiv.innerText = `Max date shouldn't be empty`
-        errorDiv.style.display = 'block'
-        errorDiv.classList.add("lng-maxDateEmpty-error")
-    } else {
-        authContext.acquireToken(organizationURI, retrieveContacts)
-        cancelButton.style.display = 'block'
+    switch (true) {
+        case minInputValue > maxInputValue:
+            errorDiv.innerText = 'Min value should not be more than max'
+            errorDiv.style.display = 'block'
+            errorDiv.classList.add("lng-minMoreThanMax-error")
+            break;
+        case maxInputValue > sevenDaysLater:
+            errorDiv.innerText = 'Max value should not be more than 7 days'
+            errorDiv.style.display = 'block'
+            errorDiv.classList.add("lng-maxMoreThanSevenDays-error")
+            break;
+        case isMinInputEmpty && isMaxInputEmpty:
+            errorDiv.innerText = 'Select min and max dates'
+            errorDiv.style.display = 'block'
+            errorDiv.classList.add("lng-selectMinMaxDates-error")
+            break;
+        case isMinInputEmpty:
+            errorDiv.innerText = `Min date shouldn't be empty`
+            errorDiv.style.display = 'block'
+            errorDiv.classList.add("lng-minDateEmpty-error")
+            break;
+        case isMaxInputEmpty:
+            errorDiv.innerText = `Max date shouldn't be empty`
+            errorDiv.style.display = 'block'
+            errorDiv.classList.add("lng-maxDateEmpty-error")
+            break;
+        default:
+            authContext.acquireToken(organizationURI, retrieveContacts)
+            cancelButton.style.display = 'block'
     }
     changeLanguage(languageId)
 
@@ -124,7 +110,6 @@ const startButton = () => {
                 if (this.status === 200) {
                     const accounts = JSON.parse(this.response).value;
                     success(accounts)
-                    console.log(accounts)
                 } else {
                     var error = JSON.parse(this.response).error;
                     console.log(error.message);
@@ -164,11 +149,16 @@ const startButton = () => {
     }
 
     function success(result) {
-        const total = result.length
-
-        progressBar.style.display = 'block'
-        processedDiv.style.display = 'block'
-        processedDiv.innerText = `Processed contacts ${processed} from ${total}`
+        total = result.length
+        if (!total) {
+            successDiv.style.display = 'block'
+            successDiv.classList.add("lng-0-contacts")
+            cancelButton.style.display = 'none'
+            processedDiv.style.display = 'block'
+            processedDiv.classList.add("lng-all-contacts-processed")
+            changeLanguage(languageId)
+            return
+        }
 
         result.forEach(function (contact) {
             if (stopProcessing) {
@@ -180,16 +170,40 @@ const startButton = () => {
             const genderCode = contact.gendercode
             const userName = contact.fullname
             let birthdayMessageBody
-
-            if (genderCode === 1) {
-                birthdayMessageBody = `Sehr geehrter Herr ${userName},
-                            Ich möchte Ihnen herzlich gratulieren zu Ihrem jüngsten Erfolg.
-                            Mögen weiterhin viele positive Momente und Errungenschaften Ihren Weg kreuzen.`
-            } else if (genderCode === 2) {
-                birthdayMessageBody = `Sehr geehrte Frau ${userName},
-                            Ich möchte Ihnen herzlich zu Ihren jüngsten Erfolgen gratulieren.
-                            Mögen weiterhin viele positive Momente und Errungenschaften Ihren Weg begleiten.`
+            let congratulation
+            if (languageId === 1033) {
+                congratulation = `Happy birthday! I hope all your birthday wishes and dreams come true!`
             }
+            if (languageId === 1049) {
+                congratulation = `с днем рождения! Надеюсь, все Ваши желания и мечты сбудутся!`
+            }
+            if (genderCode === 1) {
+                birthdayMessageBody = `Sehr geehrter Herr ${userName}, ${congratulation}.`
+            } else if (genderCode === 2) {
+                birthdayMessageBody = `Sehr geehrte Frau ${userName}, ${congratulation}.`
+            }
+
+            function updateEmailStatus() {
+                progressBar.style.display = 'block'
+                processedDiv.style.display = 'block'
+
+                all = processed + errorSendingEmail + alreadySentEmail
+                processedDiv.classList.add("lng-progress")
+
+                const progress = Math.round((all / total) * 100)
+                progressBar.style.width = progress + "%"
+                progressBar.innerHTML = progress + "%"
+
+                if (all === total) {
+                    successDiv.style.display = 'block'
+                    successDiv.classList.add("lng-all-contacts-processed")
+                    cancelButton.style.display = 'none'
+                    clearAllClasses(processedDiv)
+                    processedDiv.classList.add("lng-processed-contacts")
+                }
+                changeLanguage(languageId)
+            }
+
             if (!isEmailSentToUser) {
                 Email.send({
                     Host: "smtp.elasticemail.com",
@@ -207,49 +221,37 @@ const startButton = () => {
                         } else {
                             errorSendingEmail++
                         }
-                        all = processed + errorSendingEmail + alreadySentEmail
-                        processedDiv.innerText = `Processed contacts ${processed} from ${total}, error ${errorSendingEmail}, already sent ${alreadySentEmail}`
-                        const progress = Math.round((all / total) * 100)
-                        progressBar.style.width = progress + "%"
-                        progressBar.innerHTML = progress + "%"
-
-                        if (all === total) {
-                            processedDiv.innerText = `${total} contacts are processed, ${processed} congratulation
-                                    e-mails were successfully sent (sending of ${errorSendingEmail} e-mails failed, already sent emails ${alreadySentEmail}).`
-                            successDiv.innerText = 'All emails sent!'
-                            successDiv.style.display = 'block'
-                        }
+                        updateEmailStatus()
                     }
                 )
             } else {
                 alreadySentEmail++
-                all = processed + errorSendingEmail + alreadySentEmail
-                processedDiv.innerText = `Processed contacts ${processed} from ${total}, error ${errorSendingEmail}, already sent ${alreadySentEmail}`
-                const progress = Math.round((all / total) * 100)
-                progressBar.style.width = progress + "%"
-                progressBar.innerHTML = progress + "%"
-
-                if (all === total) {
-                    processedDiv.innerText = `${total} contacts are processed, ${processed} congratulation
-                                    e-mails were successfully sent (sending of ${errorSendingEmail} e-mails failed, already sent emails ${alreadySentEmail}).`
-                    successDiv.innerText = 'All emails sent!'
-                    successDiv.style.display = 'block'
-                }
+                updateEmailStatus()
             }
+            changeLanguage(languageId)
         })
+    }
+}
+
+function clearAllClasses(processedDiv) {
+    while (processedDiv.classList.length > 0) {
+        processedDiv.classList.remove(processedDiv.classList.item(0))
     }
 }
 
 const cancelProcessing = () => {
     const progressBar = document.getElementById("progressBar")
     progressBar.style.display = 'none'
-    if (confirm("Are you sure you want to cancel the processing?")) {
+    if (confirm(`Are you sure you want to cancel the processing?`)) {
         stopProcessing = true
         const processedDiv = document.getElementById("processedDiv")
-        processedDiv.innerText = `Processing is cancelled successfully. ${processed} contacts are processed,
-        ${processed} congratulation e-mails were successfully sent (sending of ${errorSendingEmail} e-mails failed).`
+        clearAllClasses(processedDiv)
+        processedDiv.style.display = 'block'
+        processedDiv.classList.add("lng-cancel-processing")
         const successDiv = document.getElementById("successDiv")
-        successDiv.innerText = 'Processing Cancelled'
+        clearAllClasses(successDiv)
         successDiv.style.display = 'block'
+        successDiv.classList.add("lng-all-cancelled")
+        changeLanguage(languageId)
     }
 }
